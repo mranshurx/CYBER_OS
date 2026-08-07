@@ -14,23 +14,34 @@
   overflow: hidden;
 }
 
-/* LOCK / BOOT SCREEN */
+/* LOCK SCREEN & PASSWORD CARD */
 .lock-screen {
   position: absolute;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(2, 4, 10, 0.95);
+  background: rgba(2, 4, 10, 0.96);
   backdrop-filter: blur(20px);
   z-index: 9999;
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 15px;
-  color: #00f0ff;
-  cursor: pointer;
+}
+
+.lock-card {
+  background: rgba(10, 15, 29, 0.9);
+  border: 1px solid #00f0ff;
+  border-radius: 10px;
+  padding: 35px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.3);
+  max-width: 420px;
+  width: 90%;
+  text-align: center;
 }
 
 .glow-icon {
@@ -38,13 +49,14 @@
 }
 
 .cyber-title {
-  font-size: 42px;
+  font-size: 36px;
   letter-spacing: 6px;
+  color: #00f0ff;
   text-shadow: 0 0 20px #00f0ff;
 }
 
 .cyber-credits {
-  font-size: 14px;
+  font-size: 13px;
   color: #94a3b8;
 }
 
@@ -53,20 +65,64 @@
   font-weight: bold;
 }
 
+.lock-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  background: #02040a;
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  border-radius: 6px;
+  padding: 8px 12px;
+  gap: 10px;
+}
+
+.input-group input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #00f0ff;
+  font-size: 14px;
+  width: 100%;
+  font-family: inherit;
+}
+
+.auth-error {
+  color: #ff007f;
+  font-size: 12px;
+}
+
 .unlock-btn {
-  margin-top: 20px;
   background: transparent;
   border: 1px solid #00f0ff;
   color: #00f0ff;
-  padding: 10px 20px;
+  padding: 10px;
+  border-radius: 6px;
   letter-spacing: 2px;
   cursor: pointer;
+  font-weight: bold;
   box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
 }
 
 .unlock-btn:hover {
   background: #00f0ff;
   color: #000;
+}
+
+.hint-text {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 5px;
+}
+
+.hint-text b {
+  color: #00f0ff;
 }
 
 /* DESKTOP ICONS */
@@ -100,8 +156,8 @@
   position: absolute;
   top: 80px;
   left: 120px;
-  width: 480px;
-  height: 340px;
+  width: 520px;
+  height: 360px;
   background: rgba(10, 15, 29, 0.95);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(0, 240, 255, 0.3);
@@ -150,7 +206,7 @@
 .window-body {
   flex: 1;
   padding: 12px;
-  overflow: auto;
+  overflow: hidden;
   color: white;
 }
 
@@ -285,10 +341,44 @@
   gap: 4px;
 }
 
-/* APP SPECIFIC STYLES */
-.notepad-textarea {
-  width: 100%;
+/* NOTEPAD STYLES */
+.notepad-container {
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  gap: 8px;
+}
+
+.notepad-toolbar {
+  display: flex;
+  justify-content: space-between;
+  background: #02040a;
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+}
+
+.notepad-toolbar select {
+  background: #0a0f1d;
+  color: #00f0ff;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.notepad-toolbar button {
+  background: #00f0ff;
+  color: #000;
+  border: none;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.notepad-textarea {
+  flex: 1;
   background: transparent;
   border: none;
   color: #00f0ff;
@@ -298,6 +388,7 @@
   line-height: 1.5;
 }
 
+/* TERMINAL STYLES */
 .terminal-container {
   background: #02040a;
   height: 100%;
@@ -305,15 +396,32 @@
   font-size: 12px;
   color: #00f0ff;
   border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.terminal-logs {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.terminal-line {
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 
 .terminal-input-row {
   display: flex;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 8px;
+  align-items: center;
 }
 
-.terminal-input-row span {
+.terminal-input-row .prompt {
   color: #ff007f;
 }
 
@@ -326,6 +434,7 @@
   font-family: inherit;
 }
 
+/* CALCULATOR STYLES */
 .calc-container {
   display: flex;
   flex-direction: column;

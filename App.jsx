@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Draggable from 'react-draggable';
-import { Terminal, FileText, Calculator, X, ShieldAlert, Cpu, Power } from 'lucide-react';
+import { Terminal, FileText, Calculator, X, Cpu, Power, Lock, Key, ShieldCheck, RefreshCw } from 'lucide-react';
 import './App.css';
 
 const APPS = [
@@ -13,7 +13,30 @@ export default function App() {
   const [openWindows, setOpenWindows] = useState([]);
   const [activeWindow, setActiveWindow] = useState(null);
   const [startOpen, setStartOpen] = useState(false);
-  const [isLocked, setIsLocked] = useState(false);
+  
+  // Security State
+  const [isLocked, setIsLocked] = useState(true);
+  const [systemPassword, setSystemPassword] = useState('cyber123');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [authError, setAuthError] = useState('');
+
+  // Persistent Simulated File System State
+  const [fileSystem, setFileSystem] = useState({
+    'readme.txt': 'SYSTEM MANIFEST:\n========================\nOS NAME: CYBER OS\nDESIGNED, CODED, AND MADE INTO REALITY BY: cyber_anxhu\n\nDefault Passcode: cyber123\nUse the Terminal to manage files, change passwords, or run diagnostics.',
+    'projects.txt': '1. CYBER OS - Virtual Web OS\n2. AI Neural Node\n3. Quantum Grid Engine'
+  });
+
+  const handleUnlock = (e) => {
+    e.preventDefault();
+    if (passwordInput === systemPassword) {
+      setIsLocked(false);
+      setPasswordInput('');
+      setAuthError('');
+    } else {
+      setAuthError('ACCESS DENIED: Invalid Passcode');
+      setPasswordInput('');
+    }
+  };
 
   const launchApp = (appId) => {
     if (!openWindows.includes(appId)) {
@@ -32,13 +55,32 @@ export default function App() {
 
   return (
     <div className="os-desktop">
-      {/* BOOT / LOCK SCREEN OVERLAY */}
+      {/* SECURITY LOCK / BOOT SCREEN OVERLAY */}
       {isLocked && (
-        <div className="lock-screen" onClick={() => setIsLocked(false)}>
-          <Cpu size={64} color="#00f0ff" className="glow-icon" />
-          <h1 className="cyber-title">CYBER OS</h1>
-          <p className="cyber-credits">Designed, coded, and made into reality by <span>cyber_anxhu</span></p>
-          <button className="unlock-btn">CLICK TO INITIALIZE SYSTEM</button>
+        <div className="lock-screen">
+          <div className="lock-card">
+            <Cpu size={56} color="#00f0ff" className="glow-icon" />
+            <h1 className="cyber-title">CYBER OS</h1>
+            <p className="cyber-credits">Designed, coded, and made into reality by <span>cyber_anxhu</span></p>
+
+            <form onSubmit={handleUnlock} className="lock-form">
+              <div className="input-group">
+                <Key size={18} color="#00f0ff" />
+                <input
+                  type="password"
+                  placeholder="Enter Security Passcode..."
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              {authError && <div className="auth-error">{authError}</div>}
+              <button type="submit" className="unlock-btn">
+                INITIALIZE KERNEL
+              </button>
+            </form>
+            <span className="hint-text">Default Passcode: <b>cyber123</b></span>
+          </div>
         </div>
       )}
 
@@ -87,8 +129,17 @@ export default function App() {
               </div>
 
               <div className="window-body">
-                {appId === 'notepad' && <NotepadApp />}
-                {appId === 'terminal' && <TerminalApp />}
+                {appId === 'notepad' && (
+                  <NotepadApp fileSystem={fileSystem} setFileSystem={setFileSystem} />
+                )}
+                {appId === 'terminal' && (
+                  <TerminalApp 
+                    fileSystem={fileSystem} 
+                    setFileSystem={setFileSystem}
+                    systemPassword={systemPassword}
+                    setSystemPassword={setSystemPassword}
+                  />
+                )}
                 {appId === 'calculator' && <CalculatorApp />}
               </div>
             </div>
@@ -118,7 +169,7 @@ export default function App() {
           <div className="start-footer">
             <p>Made into reality by <b>cyber_anxhu</b></p>
             <button className="lock-btn" onClick={() => { setIsLocked(true); setStartOpen(false); }}>
-              <Power size={14} /> Lock System
+              <Lock size={12} /> Lock System
             </button>
           </div>
         </div>
@@ -161,54 +212,157 @@ export default function App() {
 }
 
 /* APP COMPONENTS */
-function NotepadApp() {
-  const [text, setText] = useState(
-    "SYSTEM MANIFEST:\n========================\nOS NAME: CYBER OS\nARCH: Web-X86-Virtual\n\nDESIGNED, CODED, AND MADE INTO REALITY BY:\n-> cyber_anxhu\n\nNotes:\nDouble-click desktop icons or access the start menu to launch applications."
-  );
+
+function NotepadApp({ fileSystem, setFileSystem }) {
+  const [selectedFile, setSelectedFile] = useState('readme.txt');
+  const [content, setContent] = useState(fileSystem['readme.txt'] || '');
+
+  const handleSave = () => {
+    setFileSystem({ ...fileSystem, [selectedFile]: content });
+  };
+
   return (
-    <textarea
-      className="notepad-textarea"
-      value={text}
-      onChange={(e) => setText(e.target.value)}
-    />
+    <div className="notepad-container">
+      <div className="notepad-toolbar">
+        <select value={selectedFile} onChange={(e) => {
+          setSelectedFile(e.target.value);
+          setContent(fileSystem[e.target.value] || '');
+        }}>
+          {Object.keys(fileSystem).map((file) => (
+            <option key={file} value={file}>{file}</option>
+          ))}
+        </select>
+        <button onClick={handleSave}>Save File</button>
+      </div>
+      <textarea
+        className="notepad-textarea"
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+      />
+    </div>
   );
 }
 
-function TerminalApp() {
+function TerminalApp({ fileSystem, setFileSystem, systemPassword, setSystemPassword }) {
   const [input, setInput] = useState('');
+  const [currentDir, setCurrentDir] = useState('~');
+  const [theme, setTheme] = useState('cyan');
   const [history, setHistory] = useState([
-    'CYBER OS Terminal Kernel v1.0 initialized.',
-    'System created by cyber_anxhu.',
-    'Type "help" or "author" for commands.'
+    'CYBER OS Advanced Command Shell [v1.0.4]',
+    'System created and verified by cyber_anxhu.',
+    'Type "help" to list all available system operations.'
   ]);
+
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [history]);
 
   const handleCommand = (e) => {
     if (e.key === 'Enter') {
-      const cmd = input.trim().toLowerCase();
-      let response = '';
+      const fullCmd = input.trim();
+      const args = fullCmd.split(' ');
+      const cmd = args[0].toLowerCase();
+      let response = [];
 
-      if (cmd === 'help') response = 'Commands: help, author, system, clear, matrix';
-      else if (cmd === 'author') response = 'CYBER OS was designed, coded, and made into reality by cyber_anxhu.';
-      else if (cmd === 'system') response = 'CYBER OS v1.0 - Running inside Web Architecture.';
-      else if (cmd === 'matrix') response = 'Entering Cyber Grid... Access Granted.';
-      else if (cmd === 'clear') {
+      if (cmd === '') {
+        // Empty submission
+      } else if (cmd === 'help') {
+        response = [
+          'AVAILABLE SYSTEM COMMANDS:',
+          '  help               - Display command reference list',
+          '  author             - Show developer credits',
+          '  ls                 - List directory files',
+          '  cat <filename>     - Read contents of a file',
+          '  touch <filename>   - Create a new blank file',
+          '  rm <filename>      - Delete a file',
+          '  passwd <new_pass>  - Update system unlock passcode',
+          '  sysinfo            - Output system diagnostic status',
+          '  matrix             - Toggle digital stream mode',
+          '  clear              - Clear terminal terminal output history'
+        ];
+      } else if (cmd === 'author') {
+        response = ['CYBER OS was designed, coded, and brought to reality by cyber_anxhu.'];
+      } else if (cmd === 'ls') {
+        const files = Object.keys(fileSystem);
+        response = files.length > 0 ? [files.join('   ')] : ['Directory is empty.'];
+      } else if (cmd === 'cat') {
+        const fileName = args[1];
+        if (!fileName) {
+          response = ['Usage: cat <filename>'];
+        } else if (fileSystem[fileName] !== undefined) {
+          response = fileSystem[fileName].split('\n');
+        } else {
+          response = [`cat: ${fileName}: No such file found.`];
+        }
+      } else if (cmd === 'touch') {
+        const fileName = args[1];
+        if (!fileName) {
+          response = ['Usage: touch <filename>'];
+        } else {
+          setFileSystem({ ...fileSystem, [fileName]: '' });
+          response = [`File created: ${fileName}`];
+        }
+      } else if (cmd === 'rm') {
+        const fileName = args[1];
+        if (!fileName) {
+          response = ['Usage: rm <filename>'];
+        } else if (fileSystem[fileName] !== undefined) {
+          const newFS = { ...fileSystem };
+          delete newFS[fileName];
+          setFileSystem(newFS);
+          response = [`Removed file: ${fileName}`];
+        } else {
+          response = [`rm: ${fileName}: No such file found.`];
+        }
+      } else if (cmd === 'passwd') {
+        const newPass = args[1];
+        if (!newPass) {
+          response = [`Current Passcode: ${systemPassword}`, 'Usage: passwd <new_passcode>'];
+        } else {
+          setSystemPassword(newPass);
+          response = [`SUCCESS: System passcode changed to "${newPass}"`];
+        }
+      } else if (cmd === 'sysinfo') {
+        response = [
+          'SYSTEM DIAGNOSTICS:',
+          '  Kernel: CYBER-OS-v1.0-WebX86',
+          '  Host Environment: Web Browser Execution',
+          '  Security Protocol: Enforced Passcode Encryption',
+          '  Developer: cyber_anxhu',
+          `  Status: ACTIVE (Files Loaded: ${Object.keys(fileSystem).length})`
+        ];
+      } else if (cmd === 'matrix') {
+        response = [
+          '01000011 01011001 01000010 01000101 01010010 01011111 01001111 01010011',
+          'Wake up, Neo...',
+          'The Matrix has you.',
+          'Cyber Grid Synchronized.'
+        ];
+      } else if (cmd === 'clear') {
         setHistory([]);
         setInput('');
         return;
-      } else response = `Command not recognized: ${cmd}`;
+      } else {
+        response = [`Command non-executable: ${cmd}. Type "help" for valid inputs.`];
+      }
 
-      setHistory([...history, `> ${input}`, response]);
+      setHistory([...history, `cyber_anxhu@cyber-os:${currentDir}$ ${input}`, ...response]);
       setInput('');
     }
   };
 
   return (
-    <div className="terminal-container">
-      {history.map((line, i) => (
-        <div key={i}>{line}</div>
-      ))}
+    <div className={`terminal-container theme-${theme}`}>
+      <div className="terminal-logs">
+        {history.map((line, i) => (
+          <div key={i} className="terminal-line">{line}</div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
       <div className="terminal-input-row">
-        <span>cyber_anxhu@cyber-os:~$</span>
+        <span className="prompt">cyber_anxhu@cyber-os:{currentDir}$</span>
         <input
           type="text"
           value={input}

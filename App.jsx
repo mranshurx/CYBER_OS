@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Draggable from 'react-draggable';
-import { Terminal, FileText, Calculator, X, Cpu, Power, Lock, Key, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Terminal, FileText, Calculator, X, Cpu, Lock, Key, Code } from 'lucide-react';
 import './App.css';
 
 const APPS = [
   { id: 'notepad', title: 'Cyber Note', icon: FileText },
   { id: 'terminal', title: 'Cyber Terminal', icon: Terminal },
+  { id: 'cpp_studio', title: 'C++ Studio', icon: Code },
   { id: 'calculator', title: 'Cyber Calc', icon: Calculator },
 ];
 
@@ -22,8 +23,8 @@ export default function App() {
 
   // Persistent Simulated File System State
   const [fileSystem, setFileSystem] = useState({
-    'readme.txt': 'SYSTEM MANIFEST:\n========================\nOS NAME: CYBER OS\nDESIGNED, CODED, AND MADE INTO REALITY BY: cyber_anxhu\n\nDefault Passcode: cyber123\nUse the Terminal to manage files, change passwords, or run diagnostics.',
-    'projects.txt': '1. CYBER OS - Virtual Web OS\n2. AI Neural Node\n3. Quantum Grid Engine'
+    'readme.txt': 'SYSTEM MANIFEST:\n========================\nOS NAME: CYBER OS\nDESIGNED, CODED, AND MADE INTO REALITY BY: cyber_anxhu\n\nDefault Passcode: cyber123\nUse the C++ Studio app to compile and run C++ code.',
+    'main.cpp': `#include <iostream>\n\nint main() {\n    std::cout << "Hello, CYBER OS World!" << std::endl;\n    int a = 10;\n    int b = 20;\n    std::cout << "Sum: " << (a + b) << std::endl;\n    return 0;\n}`
   });
 
   const handleUnlock = (e) => {
@@ -55,7 +56,7 @@ export default function App() {
 
   return (
     <div className="os-desktop">
-      {/* SECURITY LOCK / BOOT SCREEN OVERLAY */}
+      {/* SECURITY LOCK SCREEN */}
       {isLocked && (
         <div className="lock-screen">
           <div className="lock-card">
@@ -113,7 +114,7 @@ export default function App() {
             onMouseDown={() => setActiveWindow(appId)}
           >
             <div
-              className={`window ${isActive ? 'active-window' : ''}`}
+              className={`window ${isActive ? 'active-window' : ''} ${appId === 'cpp_studio' ? 'large-window' : ''}`}
               style={{ zIndex: isActive ? 10 : 1 }}
             >
               <div className="window-header">
@@ -139,6 +140,9 @@ export default function App() {
                     systemPassword={systemPassword}
                     setSystemPassword={setSystemPassword}
                   />
+                )}
+                {appId === 'cpp_studio' && (
+                  <CppStudioApp fileSystem={fileSystem} setFileSystem={setFileSystem} />
                 )}
                 {appId === 'calculator' && <CalculatorApp />}
               </div>
@@ -213,6 +217,103 @@ export default function App() {
 
 /* APP COMPONENTS */
 
+function CppStudioApp({ fileSystem, setFileSystem }) {
+  const [code, setCode] = useState(
+    fileSystem['main.cpp'] || 
+    `#include <iostream>\n\nint main() {\n    std::cout << "Hello, CYBER OS World!" << std::endl;\n    return 0;\n}`
+  );
+  const [output, setOutput] = useState('');
+  const [isCompiling, setIsCompiling] = useState(false);
+
+  const compileAndRun = () => {
+    setIsCompiling(true);
+    setOutput('[CYBER_G++ COMPILER] Compiling main.cpp...\n');
+
+    setTimeout(() => {
+      let consoleLogs = [];
+      try {
+        // Parse basic std::cout commands inside main()
+        const coutMatches = code.match(/std::cout\s*<<\s*([^;]+);/g);
+        
+        if (!code.includes('int main()')) {
+          throw new Error("Compilation Error: 'main' function not found.");
+        }
+
+        if (coutMatches) {
+          coutMatches.forEach((match) => {
+            let expr = match.replace(/std::cout\s*<<\s*/, '').replace(/;$/, '');
+            let parts = expr.split('<<');
+            let lineOutput = '';
+
+            parts.forEach((part) => {
+              let trimmed = part.trim();
+              if (trimmed === 'std::endl') {
+                lineOutput += '\n';
+              } else if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+                lineOutput += trimmed.slice(1, -1);
+              } else {
+                // Try evaluating math/variables
+                try {
+                  let cleaned = trimmed.replace(/\(|\)/g, '');
+                  lineOutput += eval(cleaned);
+                } catch {
+                  lineOutput += trimmed;
+                }
+              }
+            });
+            consoleLogs.push(lineOutput);
+          });
+        }
+
+        setOutput(
+          (prev) =>
+            prev +
+            '[BUILD SUCCESSFUL]\nRunning executable ./main.out...\n------------------------------------\n' +
+            (consoleLogs.join('') || 'Program exited with code 0.') +
+            '\n------------------------------------\nProcess finished with exit code 0.'
+        );
+      } catch (err) {
+        setOutput(
+          (prev) => prev + `[BUILD FAILURE]\n${err.message}`
+        );
+      } finally {
+        setIsCompiling(false);
+      }
+    }, 800);
+  };
+
+  const handleSave = () => {
+    setFileSystem({ ...fileSystem, 'main.cpp': code });
+    setOutput('[SYSTEM] Source saved to fileSystem["main.cpp"]');
+  };
+
+  return (
+    <div className="cpp-container">
+      <div className="cpp-toolbar">
+        <span className="file-tag">main.cpp</span>
+        <div className="btn-group">
+          <button className="save-btn" onClick={handleSave}>Save Code</button>
+          <button className="run-btn" onClick={compileAndRun} disabled={isCompiling}>
+            {isCompiling ? 'Compiling...' : '▶ Run C++'}
+          </button>
+        </div>
+      </div>
+      <div className="cpp-editor-layout">
+        <textarea
+          className="cpp-code-editor"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="// Write your C++ code here..."
+        />
+        <div className="cpp-console">
+          <div className="console-title">EXECUTION CONSOLE</div>
+          <pre>{output || 'Click "▶ Run C++" to compile and execute code.'}</pre>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function NotepadApp({ fileSystem, setFileSystem }) {
   const [selectedFile, setSelectedFile] = useState('readme.txt');
   const [content, setContent] = useState(fileSystem['readme.txt'] || '');
@@ -246,11 +347,10 @@ function NotepadApp({ fileSystem, setFileSystem }) {
 function TerminalApp({ fileSystem, setFileSystem, systemPassword, setSystemPassword }) {
   const [input, setInput] = useState('');
   const [currentDir, setCurrentDir] = useState('~');
-  const [theme, setTheme] = useState('cyan');
   const [history, setHistory] = useState([
     'CYBER OS Advanced Command Shell [v1.0.4]',
     'System created and verified by cyber_anxhu.',
-    'Type "help" to list all available system operations.'
+    'C++ Compiler tool loaded. Type "help" for controls.'
   ]);
 
   const bottomRef = useRef(null);
@@ -279,8 +379,7 @@ function TerminalApp({ fileSystem, setFileSystem, systemPassword, setSystemPassw
           '  rm <filename>      - Delete a file',
           '  passwd <new_pass>  - Update system unlock passcode',
           '  sysinfo            - Output system diagnostic status',
-          '  matrix             - Toggle digital stream mode',
-          '  clear              - Clear terminal terminal output history'
+          '  clear              - Clear terminal output history'
         ];
       } else if (cmd === 'author') {
         response = ['CYBER OS was designed, coded, and brought to reality by cyber_anxhu.'];
@@ -333,13 +432,6 @@ function TerminalApp({ fileSystem, setFileSystem, systemPassword, setSystemPassw
           '  Developer: cyber_anxhu',
           `  Status: ACTIVE (Files Loaded: ${Object.keys(fileSystem).length})`
         ];
-      } else if (cmd === 'matrix') {
-        response = [
-          '01000011 01011001 01000010 01000101 01010010 01011111 01001111 01010011',
-          'Wake up, Neo...',
-          'The Matrix has you.',
-          'Cyber Grid Synchronized.'
-        ];
       } else if (cmd === 'clear') {
         setHistory([]);
         setInput('');
@@ -354,7 +446,7 @@ function TerminalApp({ fileSystem, setFileSystem, systemPassword, setSystemPassw
   };
 
   return (
-    <div className={`terminal-container theme-${theme}`}>
+    <div className="terminal-container">
       <div className="terminal-logs">
         {history.map((line, i) => (
           <div key={i} className="terminal-line">{line}</div>
